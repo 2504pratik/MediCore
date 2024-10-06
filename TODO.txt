@@ -1,0 +1,7 @@
+- update Patient bug fix
+- discovery server
+- auth service
+- api gateway
+- notification service
+- prescriptions should be created/updated by doctor and only viewed by medical stores and patients
+- address model, dto, converter used multiple times using different files
