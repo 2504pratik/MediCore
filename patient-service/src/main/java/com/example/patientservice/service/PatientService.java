@@ -4,21 +4,35 @@ import com.example.patientservice.converter.AddressConverter;
 import com.example.patientservice.converter.MedicalHistoryConverter;
 import com.example.patientservice.converter.PatientConverter;
 import com.example.patientservice.dto.PatientDTO;
+import com.example.patientservice.models.MedicalHistory;
 import com.example.patientservice.models.Patient;
+import com.example.patientservice.repository.MedicalHistoryRepository;
 import com.example.patientservice.repository.PatientRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class PatientService {
 
-    private final PatientRepository patientRepository;
+    @Autowired
+    private PatientRepository patientRepository;
+
+    @Autowired
+    private MedicalHistoryRepository medicalHistoryRepository;
 
     @Transactional
     public void createPatient(PatientDTO patientDTO){
-        patientRepository.save(PatientConverter.toEntity(patientDTO));
+        Patient patient = patientRepository.save(PatientConverter.toEntity(patientDTO));
+
+        // Iterate over the list of medical histories and save each one
+        if (patientDTO.getMedicalHistory() != null) {
+            patientDTO.getMedicalHistory().forEach(medicalHistoryDTO -> {
+                MedicalHistory medicalHistory = MedicalHistoryConverter.toEntity(medicalHistoryDTO);
+                medicalHistory.setPatient(patient); // Set the patient reference in each medical history
+                medicalHistoryRepository.save(medicalHistory);  // Save the medical history
+            });
+        }
     }
 
     public PatientDTO getPatientById(String patientId) {

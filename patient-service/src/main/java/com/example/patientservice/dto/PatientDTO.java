@@ -10,9 +10,6 @@ import java.util.Date;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 public class PatientDTO {
     private String patientId;
     private String firstName;
