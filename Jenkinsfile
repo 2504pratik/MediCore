@@ -1,55 +1,64 @@
-node {
-    // Define services with their paths and ports
-    def services = [
-        [name: "patient-service", port: 8081, path: "/patient-service"],
-        [name: "doctor-service", port: 8082, path: "/doctor-service"],
-        [name: "store-service", port: 8083, path: "/medical-store-service"]
-    ]
+pipeline {
+    agent any
 
-    def repoUrl = "https://github.com/2504pratik/MediCore.git" // Update with your repository URL
-    def credentialsId = "medicore" // Replace with your Jenkins GitHub credentials ID
+    environment {
+        // Define environment variables to use across stages
+        GIT_REPO_URL = 'https://github.com/2504pratik/MediCore.git'
+        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
+        DOCKER_CREDENTIALS = 'medicore'  // Replace with Jenkins credentials ID
+    }
 
-    try {
-        stage('Clone Repo') {
-            // Clone the whole repo once
-            git url: repoUrl,
-                credentialsId: credentialsId,
-                branch: 'main'
+    stages {
+        stage('Clone Repository') {
+            steps {
+                // Check out code from GitHub
+                git credentialsId: "${DOCKER_CREDENTIALS}", url: "${GIT_REPO_URL}"
+            }
         }
 
-        for (service in services) {
-            stage("Build Docker Image - ${service.name}") {
-                dir(service.path) {
-                    dockerImage = docker.build("${service.name}:${env.BUILD_NUMBER}", ".")
+        stage('Build and Push Docker Images') {
+            steps {
+                script {
+                    // Navigate to each service directory, build Docker images, and push (optional)
+                    def services = ['patient-service', 'doctor-service', 'medical-store-service', 'auth-service']
+                    for (service in services) {
+                        dir(service) {
+                            sh """
+                                docker build -t ${service}:latest .
+                            """
+                        }
+                    }
                 }
             }
+        }
 
-            stage("Deploy Docker Container - ${service.name}") {
-                def dockerImageTag = "${service.name}:${env.BUILD_NUMBER}"
-
-                echo "Deploying Docker Image Tag: ${dockerImageTag}"
-
-                // Stop and remove any running container for this service
-                sh "docker stop ${service.name} || true && docker rm ${service.name} || true"
-
-                // Run the container on its designated port
-                sh "docker run --name ${service.name} -d -p ${service.port}:${service.port} ${dockerImageTag}"
+        stage('Start Services with Docker Compose') {
+            steps {
+                script {
+                    // Run the services using Docker Compose
+                    sh "docker-compose -f ${DOCKER_COMPOSE_FILE} up -d"
+                }
             }
         }
-    } catch (e) {
-        currentBuild.result = "FAILED"
-        throw e
-    } finally {
-        // Optional notifications if enabled
-        // notifyBuild(currentBuild.result)
-    }
-}
 
-def notifyBuild(String buildStatus = 'STARTED') {
-    buildStatus = buildStatus ?: 'SUCCESSFUL'
-    def now = new Date()
-    def subject = "${buildStatus} - Microservices Deployment - ${env.JOB_NAME} Build #${env.BUILD_NUMBER}"
-    def details = """<p>${buildStatus} JOB for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}</p>
-        <p>Time: ${now}</p>
-        <p>Check console output at "<a href="${env.BUILD_URL}">${env.JOB_NAME}</a>"</p>"""
+        stage('Post-Build Cleanup') {
+            steps {
+                script {
+                    // Optional: clean up unused Docker images or containers after running tests
+                    sh "docker image prune -f"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Bring down the Docker Compose services after pipeline completion
+            sh "docker-compose -f ${DOCKER_COMPOSE_FILE} down"
+        }
+        cleanup {
+            // Cleanup workspace
+            cleanWs()
+        }
+    }
 }
