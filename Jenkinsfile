@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven_3_9_9'  // Ensure 'maven_3_5_0' is correctly set up in Jenkins
+        maven 'maven_3_9_9'
     }
 
     stages {
@@ -17,10 +17,20 @@ pipeline {
             }
         }
 
-        stage('Build Docker image') {
+        stage('Build Docker images') {
             steps {
-                script{
-                    sh 'docker build -t medicore/patient-service .'
+                script {
+                    // Build Docker image for patient-service
+                    sh 'docker build -t medicore/patient-service -f patient-service/Dockerfile .'
+
+                    // Build Docker image for doctor-service
+                    sh 'docker build -t medicore/doctor-service -f doctor-service/Dockerfile .'
+
+                    // Build Docker image for medical-store-service
+                    sh 'docker build -t medicore/medical-store-service -f medical-store-service/Dockerfile .'
+
+                    // Build Docker image for another-service
+                    sh 'docker build -t medicore/auth-service -f auth-service/Dockerfile .'
                 }
             }
         }
