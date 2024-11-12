@@ -18,6 +18,7 @@
         <module>patient-service</module>
         <module>doctor-service</module>
         <module>medical-store-service</module>
+        <module>auth-service</module>
     </modules>
     <version>1.0-SNAPSHOT</version>
 
