@@ -34,9 +34,4 @@
             <scope>runtime</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <finalName>patient-service</finalName>
-    </build>
-
 </project>

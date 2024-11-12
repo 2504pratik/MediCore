@@ -1,21 +1,7 @@
-# Docker Build Stage
-FROM maven:3-jdk-8-alpine AS build
+FROM openjdk:8
 
+EXPOSE 8084
 
-# Build Stage
-WORKDIR /opt/app
+ADD target/auth-service-1.0-SNAPSHOT.jar auth-service-1.0-SNAPSHOT.jar
 
-COPY ./ /opt/app
-RUN mvn clean install -DskipTests
-
-
-# Docker Build Stage
-FROM openjdk:8-jdk-alpine
-
-COPY --from=build /opt/app/target/*.jar app.jar
-
-ENV PORT 8084
-EXPOSE $PORT
-
-ENTRYPOINT ["java","-jar","-Xmx1024M","-Dserver.port=${PORT}","app.jar"]
-
+ENTRYPOINT["java","-jar","/auth-service-1.0-SNAPSHOT.jar"]

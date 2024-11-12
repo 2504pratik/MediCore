@@ -39,9 +39,4 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
     </dependencies>
-
-    <build>
-        <finalName>doctor-service</finalName>
-    </build>
-
 </project>
