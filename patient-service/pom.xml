@@ -35,4 +35,8 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <finalName>patient-service</finalName>
+    </build>
+
 </project>

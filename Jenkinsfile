@@ -1,64 +1,28 @@
 pipeline {
     agent any
 
-    environment {
-        // Define environment variables to use across stages
-        GIT_REPO_URL = 'https://github.com/2504pratik/MediCore.git'
-        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
-        DOCKER_CREDENTIALS = 'medicore'  // Replace with Jenkins credentials ID
+    tools {
+        maven 'maven_3_9_9'  // Ensure 'maven_3_5_0' is correctly set up in Jenkins
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                // Check out code from GitHub
-                git credentialsId: "${DOCKER_CREDENTIALS}", url: "${GIT_REPO_URL}"
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/2504pratik/MediCore.git']]])
+            }
+        }
+        stage('Build Maven') {
+            steps {
+                sh 'mvn clean install'
             }
         }
 
-        stage('Build and Push Docker Images') {
+        stage('Build Docker image') {
             steps {
-                script {
-                    // Navigate to each service directory, build Docker images, and push (optional)
-                    def services = ['patient-service', 'doctor-service', 'medical-store-service', 'auth-service']
-                    for (service in services) {
-                        dir(service) {
-                            sh """
-                                docker build -t ${service}:latest .
-                            """
-                        }
-                    }
+                script{
+                    sh 'docker build -t medicore/patient-service .'
                 }
             }
-        }
-
-        stage('Start Services with Docker Compose') {
-            steps {
-                script {
-                    // Run the services using Docker Compose
-                    sh "docker-compose -f ${DOCKER_COMPOSE_FILE} up -d"
-                }
-            }
-        }
-
-        stage('Post-Build Cleanup') {
-            steps {
-                script {
-                    // Optional: clean up unused Docker images or containers after running tests
-                    sh "docker image prune -f"
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            // Bring down the Docker Compose services after pipeline completion
-            sh "docker-compose -f ${DOCKER_COMPOSE_FILE} down"
-        }
-        cleanup {
-            // Cleanup workspace
-            cleanWs()
         }
     }
 }
